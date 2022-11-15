@@ -44,7 +44,9 @@ contract FTC is ERC20Burnable, Ownable {
         external
         onlyOwner
     {
-        _isExcludedFromFee[account] = enable;
+        if(_isExcludedFromFee[account] != enable) {
+            _isExcludedFromFee[account] = enable;
+        }
     }
 
     function multiTransfer(address[] memory receivers, uint256[] memory amounts)
@@ -74,15 +76,17 @@ contract FTC is ERC20Burnable, Ownable {
             "balance must be greater than min_balance"
         );
         if (!_isExcludedFromFee[sender] && !_isExcludedFromFee[recipient]) {
+            if (balanceOf(sender) - amount < MIN_BALANCE) {
+                amount -= MIN_BALANCE;
+            }
+
             uint256 communityFundAmount = (amount * 2) / 100;
             uint256 marketAmount = amount / 100;
 
             uint256 transferTokenAmount = amount -
                 communityFundAmount -
                 marketAmount;
-            if (balanceOf(sender) - amount < MIN_BALANCE) {
-                transferTokenAmount -= MIN_BALANCE;
-            }
+
             super._transfer(sender, communityFundAddr, communityFundAmount);
             super._transfer(sender, marketAddr, marketAmount);
             super._transfer(sender, recipient, transferTokenAmount);
